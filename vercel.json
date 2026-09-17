@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/webhook/evolution", "destination": "/api/webhook/evolution" },
+    { "source": "/health", "destination": "/api/health" }
+  ],
+  "functions": {
+    "api/webhook/evolution.js": { "maxDuration": 30 }
+  }
+}

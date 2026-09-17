@@ -2,9 +2,14 @@
 
 Este proyecto es un bot inicial para WhatsApp conectado a **Evolution API**. Guía a cada persona de forma ordenada: contacto → necesidad → material → recomendación → tarifa → disponibilidad → confirmación → ubicación.
 
+## Documentación
+
+- [Guía para principiantes](docs/GUIA-PARA-PRINCIPIANTES.md): explicación de WhatsApp, webhooks y cada paso del bot.
+- [Despliegue con Vercel](docs/DESPLIEGUE-VERCEL.md): arquitectura recomendada, base de datos y variables de entorno.
+
 ## Cómo funciona, en lenguaje simple
 
-WhatsApp no llama directamente a nuestro código. Evolution API mantiene la conexión con WhatsApp y, ante cada mensaje, hace una petición HTTP a la ruta `POST /webhook/evolution` de este proyecto. A eso se le llama **webhook**.
+WhatsApp no llama directamente a nuestro código. Evolution API mantiene la conexión con WhatsApp y, ante cada mensaje, hace una petición HTTP a la ruta `POST /webhook/evolution` de este proyecto. A eso se le llama **webhook**. En Vercel esa ruta se reescribe a una función serverless en `api/webhook/evolution.js`.
 
 El servidor identifica al contacto, lee en qué paso está y guarda el avance en `data/conversations.json`. Después pide a Evolution API que envíe la siguiente pregunta. Así, cada número puede estar en una etapa distinta sin mezclarse con los demás.
 
@@ -19,7 +24,7 @@ El servidor identifica al contacto, lee en qué paso está y guarda el avance en
    npm install
    ```
 
-3. Copia `.env.example` y nómbralo `.env`. Completa la URL, API key e instancia de Evolution API; también ajusta la tarifa y ubicación.
+3. Copia `.env.example` y nómbralo `.env`. Completa la URL, API key e instancia de Evolution API; también ajusta la tarifa.
 4. Comprueba la lógica sin conectarte a WhatsApp:
 
    ```bash
@@ -49,8 +54,12 @@ El formato de eventos puede variar algo entre versiones. El bot acepta el format
 ## Dónde modificar el comportamiento
 
 - `src/conversation.js`: mensajes, preguntas y reglas de cada etapa.
-- `.env`: tarifa, dirección y enlace a Maps; nunca publiques este archivo.
+- `.env`: tarifa y credenciales de Evolution API; nunca publiques este archivo.
 - `src/evolution.js`: adaptación a una versión distinta de Evolution API.
+
+## Despliegue en Vercel
+
+El despliegue de producción usa Redis REST (Vercel KV o Upstash) para que el estado sobreviva entre funciones. Consulta la [guía de Vercel](docs/DESPLIEGUE-VERCEL.md) para importar el repositorio de GitHub, definir variables y configurar Evolution API.
 
 ## Antes de usarlo con clientes
 
