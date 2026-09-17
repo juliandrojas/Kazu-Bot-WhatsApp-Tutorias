@@ -18,12 +18,10 @@ Vercel ejecuta una función por petición y puede reducir las instancias a cero 
 
 ## Cambios necesarios antes de desplegar
 
-El servidor actual usa Express y escribe las conversaciones en `data/conversations.json`. Para Vercel necesitamos dos cambios:
-
-El proyecto ya incluye ambos cambios:
+El bot usa Supabase tanto en Express como en Vercel; por eso no depende del sistema de archivos local. El proyecto incluye:
 
 1. `api/webhook/evolution.js` es la Vercel Function de `POST /webhook/evolution`; `vercel.json` conserva esa URL pública sin el prefijo `/api`.
-2. El estado se guarda en la tabla `conversations` de Supabase, no en el sistema de archivos efímero de Vercel.
+2. El estado se guarda en la tabla `conversations` de Supabase, con contacto, necesidad, material, horario, confirmación y fechas, además del estado del diálogo.
 
 No uses el sistema de archivos como base de datos en Vercel. Una petición puede ejecutarse en una instancia distinta de la anterior y los archivos no constituyen almacenamiento persistente para la aplicación.
 
@@ -48,7 +46,7 @@ Nunca pegues secretos en el repositorio ni los envíes por WhatsApp o capturas d
 
 1. Sube el proyecto a GitHub.
 2. En Vercel selecciona **Add New → Project** e importa el repositorio. Detectará Node.js automáticamente; no establezcas un directorio raíz distinto.
-3. En Supabase, abre **SQL Editor**, ejecuta el contenido de `supabase/schema.sql` y copia la **Project URL** y la clave secreta `service_role` desde **Settings → API**.
+3. En Supabase, abre **SQL Editor**, ejecuta el contenido de `supabase/schema.sql` y copia la **Project URL** y la clave secreta `service_role` desde **Settings → API**. Si ya habías creado la tabla, aplica primero `supabase/migrations/20260917120000_add_conversation_details.sql`.
 4. Añade las tres variables de Evolution API, `TUTOR_PRICE`, `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` para los entornos Production, Preview y Development. No subas `.env` ni expongas `SUPABASE_SERVICE_ROLE_KEY` en el navegador.
 5. Despliega el proyecto y copia el dominio que Vercel te entregue.
 6. Configura en Evolution API el webhook `MESSAGES_UPSERT` con esta URL:

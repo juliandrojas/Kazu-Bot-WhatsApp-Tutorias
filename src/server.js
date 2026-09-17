@@ -1,17 +1,22 @@
 import 'dotenv/config';
 import express from 'express';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { ConversationStore } from './store.js';
+import { SupabaseConversationStore } from './supabase-store.js';
 import { createEvolutionWebhook } from './webhook.js';
 
-const required = ['EVOLUTION_API_URL', 'EVOLUTION_API_KEY', 'EVOLUTION_INSTANCE'];
+const required = [
+  'EVOLUTION_API_URL',
+  'EVOLUTION_API_KEY',
+  'EVOLUTION_INSTANCE',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY'
+];
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) throw new Error(`Faltan variables en .env: ${missing.join(', ')}. Copia .env.example como .env.`);
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const store = new ConversationStore(path.join(__dirname, '../data/conversations.json'));
-await store.load();
+const store = new SupabaseConversationStore({
+  url: process.env.SUPABASE_URL,
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+});
 const settings = { price: process.env.TUTOR_PRICE ?? 'COP 45.000 por hora' };
 const evolution = { baseUrl: process.env.EVOLUTION_API_URL, apiKey: process.env.EVOLUTION_API_KEY, instance: process.env.EVOLUTION_INSTANCE };
 

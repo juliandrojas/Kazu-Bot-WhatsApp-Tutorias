@@ -11,7 +11,7 @@ Este proyecto es un bot inicial para WhatsApp conectado a **Evolution API**. Gu�
 
 WhatsApp no llama directamente a nuestro código. Evolution API mantiene la conexión con WhatsApp y, ante cada mensaje, hace una petición HTTP a la ruta `POST /webhook/evolution` de este proyecto. A eso se le llama **webhook**. En Vercel esa ruta se reescribe a una función serverless en `api/webhook/evolution.js`.
 
-El servidor identifica al contacto, lee en qué paso está y guarda el avance en `data/conversations.json`. Después pide a Evolution API que envíe la siguiente pregunta. Así, cada número puede estar en una etapa distinta sin mezclarse con los demás.
+El servidor identifica al contacto, lee en qué paso está y guarda el avance en Supabase. Después pide a Evolution API que envíe la siguiente pregunta. Así, cada número puede estar en una etapa distinta sin mezclarse con los demás, incluso después de reiniciar o desplegar una actualización.
 
 `inicio`, `hola` o `menu` reinician una conversación. Los grupos y los mensajes enviados por tu propio número se ignoran para prevenir bucles.
 
@@ -24,7 +24,7 @@ El servidor identifica al contacto, lee en qué paso está y guarda el avance en
    npm install
    ```
 
-3. Copia `.env.example` y nómbralo `.env`. Completa la URL, API key e instancia de Evolution API; también ajusta la tarifa.
+3. Crea un proyecto en Supabase, ejecuta [`supabase/schema.sql`](supabase/schema.sql) en su SQL Editor y copia su URL y clave `service_role`. Luego copia `.env.example` como `.env`, completa las credenciales de Evolution API y Supabase, y ajusta la tarifa.
 4. Comprueba la lógica sin conectarte a WhatsApp:
 
    ```bash
@@ -59,10 +59,10 @@ El formato de eventos puede variar algo entre versiones. El bot acepta el format
 
 ## Despliegue en Vercel
 
-El despliegue de producción usa Supabase para que el estado sobreviva entre funciones. Consulta la [guía de Vercel](docs/DESPLIEGUE-VERCEL.md) para importar el repositorio de GitHub, definir variables y configurar Evolution API.
+El bot usa Supabase en local y en producción para que el estado sobreviva entre reinicios y funciones serverless. Consulta la [guía de Vercel](docs/DESPLIEGUE-VERCEL.md) para importar el repositorio de GitHub, definir variables y configurar Evolution API.
 
 ## Antes de usarlo con clientes
 
-Esta primera versión conserva las conversaciones en un archivo local: es adecuada para aprendizaje y una única instancia del servidor. En Vercel usa Supabase como base de datos persistente; añade autenticación/verificación del webhook y conecta la confirmación a un calendario real antes de atender clientes.
+Supabase almacena por contacto el nombre, necesidad, material, horario, confirmación y fechas, además del estado que permite reanudar el diálogo. Añade autenticación/verificación del webhook y conecta la confirmación a un calendario real antes de atender clientes.
 
 Documentación útil: [webhooks de Evolution API](https://docs.evolutionfoundation.com.br/en/evolution-api/configuration/webhooks) y [envío de texto](https://github.com/evolution-foundation/evolution-docs/blob/main/docs/05-Endpoints/00-send-plain-text.md).

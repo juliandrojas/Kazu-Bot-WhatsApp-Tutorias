@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { advance, firstMessage } from '../src/conversation.js';
 
-const settings = { price: 'COP 45.000', location: 'Bogotá', locationLink: '' };
+const settings = { price: 'COP 45.000' };
 
 test('recorre una solicitud hasta la confirmación', () => {
   let state;
@@ -16,11 +16,12 @@ test('recorre una solicitud hasta la confirmación', () => {
   result = advance(state, 'jueves 5 pm', settings); state = result.conversation;
   result = advance(state, 'sí', settings);
   assert.match(result.reply, /Solicitud confirmada/);
-  assert.equal(result.conversation.step, 'location');
+  assert.doesNotMatch(result.reply, /\d\/8|📍|Mapa:/);
+  assert.equal(result.conversation.step, 'completed');
 });
 
 test('inicio reinicia el flujo', () => {
-  const result = advance({ step: 'location', data: { name: 'Ana' } }, 'inicio', settings);
+  const result = advance({ step: 'completed', data: { name: 'Ana' } }, 'inicio', settings);
   assert.equal(result.reply, firstMessage);
   assert.equal(result.conversation.step, 'contact');
 });

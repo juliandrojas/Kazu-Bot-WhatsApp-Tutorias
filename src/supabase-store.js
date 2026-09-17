@@ -33,7 +33,17 @@ export class SupabaseConversationStore {
         'Content-Type': 'application/json',
         Prefer: 'resolution=merge-duplicates,return=minimal'
       }),
-      body: JSON.stringify({ contact, conversation, updated_at: new Date().toISOString() })
+      body: JSON.stringify({
+        contact,
+        name: conversation.data?.name ?? null,
+        need: conversation.data?.need ?? null,
+        material: conversation.data?.material ?? null,
+        availability: conversation.data?.availability ?? null,
+        confirmed: conversation.step === 'completed',
+        confirmed_at: conversation.data?.confirmedAt ?? null,
+        conversation,
+        updated_at: new Date().toISOString()
+      })
     });
     if (!response.ok) throw new Error(`Supabase respondió ${response.status}: ${await response.text()}`);
   }

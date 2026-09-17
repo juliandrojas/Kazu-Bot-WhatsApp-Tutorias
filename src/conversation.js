@@ -6,10 +6,10 @@ const STEPS = {
   RATE: 'rate',
   AVAILABILITY: 'availability',
   CONFIRMATION: 'confirmation',
-  LOCATION: 'location'
+  COMPLETED: 'completed'
 };
 
-export const firstMessage = `¡Hola! Soy Kazu, el asistente de tutorías. Te ayudaré a organizar tu clase en pocos pasos.\n\n1/8. ¿Cómo te llamas?`;
+export const firstMessage = '¡Hola! Soy Kazu, el asistente de tutorías. Te ayudaré a organizar tu clase.\n\n¿Cómo te llamas?';
 
 function normalize(text) {
   return text.trim().toLowerCase();
@@ -45,18 +45,18 @@ export function advance(current, incomingText, settings) {
     case STEPS.CONTACT:
       return {
         conversation: { step: STEPS.NEED, data: { ...data, name: text } },
-        reply: `¡Mucho gusto, ${text}!\n\n2/8. ¿Qué materia o tema necesitas reforzar y para cuándo?`
+        reply: `¡Mucho gusto, ${text}!\n\n¿Qué materia o tema necesitas reforzar y para cuándo?`
       };
     case STEPS.NEED:
       return {
         conversation: { step: STEPS.MATERIAL, data: { ...data, need: text } },
-        reply: '3/8. ¿Tienes una guía, taller, fotos o apuntes para revisar? Responde *sí* y envíalos, o *no* si aún no los tienes.'
+        reply: '¿Tienes una guía, taller, fotos o apuntes para revisar? Responde *sí* y envíalos, o *no* si aún no los tienes.'
       };
     case STEPS.MATERIAL:
       if (isNo(text)) {
         return {
           conversation: { step: STEPS.RECOMMENDATION, data: { ...data, material: 'No tiene material' } },
-          reply: '4/8. No hay problema. Recomiendo que tengamos a mano el temario, los últimos apuntes y las dudas puntuales antes de iniciar.\n\n¿Te parece bien esta preparación? (sí/no)'
+          reply: 'No hay problema. Recomiendo tener a mano el temario, los últimos apuntes y las dudas puntuales antes de iniciar.\n\n¿Te parece bien esta preparación? (sí/no)'
         };
       }
       if (isYes(text)) {
@@ -68,7 +68,7 @@ export function advance(current, incomingText, settings) {
       if (normalize(text) === 'listo') {
         return {
           conversation: { step: STEPS.RECOMMENDATION, data: { ...data, material: 'Recibido' } },
-          reply: '4/8. Gracias. Revisaremos el material antes de la sesión y empezaremos por los ejercicios que más te cuesten.\n\n¿Te parece bien esta preparación? (sí/no)'
+          reply: 'Gracias. Revisaremos el material antes de la sesión y empezaremos por los ejercicios que más te cuesten.\n\n¿Te parece bien esta preparación? (sí/no)'
         };
       }
       return { conversation, reply: 'Responde *sí* para enviar material o *no* si no lo tienes.' };
@@ -76,31 +76,30 @@ export function advance(current, incomingText, settings) {
       if (!isYes(text)) return { conversation, reply: 'Para continuar, responde *sí*. Si quieres cambiar la necesidad, escribe *inicio* y empezamos de nuevo.' };
       return {
         conversation: { step: STEPS.RATE, data },
-        reply: `5/8. La tarifa es *${settings.price}*. Incluye preparación y una hora de tutoría.\n\n¿Quieres continuar? (sí/no)`
+        reply: `La tarifa es *${settings.price}*. Incluye preparación y una hora de tutoría.\n\n¿Quieres continuar? (sí/no)`
       };
     case STEPS.RATE:
       if (isNo(text)) return { conversation: reset(), reply: 'Entiendo. Si más adelante quieres agendar una tutoría, escribe *inicio*. ¡Gracias!' };
       if (!isYes(text)) return { conversation, reply: 'Por favor responde *sí* para continuar o *no* para finalizar.' };
       return {
         conversation: { step: STEPS.AVAILABILITY, data },
-        reply: '6/8. ¿Qué día y hora te quedan mejor? Por ejemplo: “jueves 5:00 p. m.”.'
+        reply: '¿Qué día y hora te quedan mejor? Por ejemplo: “jueves 5:00 p. m.”.'
       };
     case STEPS.AVAILABILITY:
       return {
         conversation: { step: STEPS.CONFIRMATION, data: { ...data, availability: text } },
-        reply: `7/8. Resume: tutoría de *${data.need}* para *${text}*, a nombre de *${data.name}*.\n\n¿Confirmas la solicitud? (sí/no)`
+        reply: `Resumen: tutoría de *${data.need}* para *${text}*, a nombre de *${data.name}*.\n\n¿Confirmas la solicitud? (sí/no)`
       };
     case STEPS.CONFIRMATION:
       if (isNo(text)) return { conversation: { step: STEPS.AVAILABILITY, data }, reply: 'De acuerdo. Indícame otro día y hora que te sirvan.' };
       if (!isYes(text)) return { conversation, reply: 'Responde *sí* para confirmar o *no* para cambiar el horario.' };
       return {
-        conversation: { step: STEPS.LOCATION, data: { ...data, confirmedAt: new Date().toISOString() } },
-        reply: `8/8. ¡Solicitud confirmada! La tutoría será en:\n📍 *${settings.location}*\n${settings.locationLink ? `Mapa: ${settings.locationLink}\n` : ''}\nTe contactaremos para validar la disponibilidad final. Escribe *inicio* si necesitas otra tutoría.`
+        conversation: { step: STEPS.COMPLETED, data: { ...data, confirmedAt: new Date().toISOString() } },
+        reply: '¡Solicitud confirmada! Te contactaremos para validar la disponibilidad final. Escribe *inicio* si necesitas otra tutoría.'
       };
-    case STEPS.LOCATION:
+    case STEPS.COMPLETED:
       return { conversation, reply: 'Tu solicitud ya está registrada. Escribe *inicio* si quieres crear una nueva.' };
     default:
       return { conversation: reset(), reply: firstMessage };
   }
 }
-
