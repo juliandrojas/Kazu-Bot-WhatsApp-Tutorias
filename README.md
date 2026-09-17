@@ -59,10 +59,10 @@ El formato de eventos puede variar algo entre versiones. El bot acepta el format
 
 ## Despliegue en Vercel
 
-El despliegue de producción usa Redis REST (Vercel KV o Upstash) para que el estado sobreviva entre funciones. Consulta la [guía de Vercel](docs/DESPLIEGUE-VERCEL.md) para importar el repositorio de GitHub, definir variables y configurar Evolution API.
+El despliegue de producción usa Supabase para que el estado sobreviva entre funciones. Consulta la [guía de Vercel](docs/DESPLIEGUE-VERCEL.md) para importar el repositorio de GitHub, definir variables y configurar Evolution API.
 
 ## Antes de usarlo con clientes
 
-Esta primera versión conserva las conversaciones en un archivo local: es adecuada para aprendizaje y una única instancia del servidor. Para producción conviene pasar ese estado a Redis o una base de datos, añadir autenticación/verificación del webhook y conectar la confirmación a un calendario real.
+Esta primera versión conserva las conversaciones en un archivo local: es adecuada para aprendizaje y una única instancia del servidor. En Vercel usa Supabase como base de datos persistente; añade autenticación/verificación del webhook y conecta la confirmación a un calendario real antes de atender clientes.
 
 Documentación útil: [webhooks de Evolution API](https://docs.evolutionfoundation.com.br/en/evolution-api/configuration/webhooks) y [envío de texto](https://github.com/evolution-foundation/evolution-docs/blob/main/docs/05-Endpoints/00-send-plain-text.md).

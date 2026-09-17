@@ -1,18 +1,18 @@
-import { RedisConversationStore } from '../../src/redis-store.js';
+import { SupabaseConversationStore } from '../../src/supabase-store.js';
 import { createEvolutionWebhook } from '../../src/webhook.js';
 
 const required = ['EVOLUTION_API_URL', 'EVOLUTION_API_KEY', 'EVOLUTION_INSTANCE'];
 const missing = required.filter((key) => !process.env[key]);
 
-const redisUrl = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
-const redisToken = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const configurationError = missing.length
   ? `Faltan variables de Evolution API: ${missing.join(', ')}.`
   : null;
 
-const handler = !configurationError && redisUrl && redisToken
+const handler = !configurationError && supabaseUrl && supabaseServiceRoleKey
   ? createEvolutionWebhook({
-      store: new RedisConversationStore({ url: redisUrl, token: redisToken }),
+      store: new SupabaseConversationStore({ url: supabaseUrl, serviceRoleKey: supabaseServiceRoleKey }),
       settings: { price: process.env.TUTOR_PRICE ?? 'COP 45.000 por hora' },
       evolution: {
         baseUrl: process.env.EVOLUTION_API_URL,
@@ -29,7 +29,7 @@ export default async function evolutionWebhook(req, res) {
     return res.status(500).json({ ok: false, error: 'Configuración incompleta.' });
   }
   if (!handler) {
-    console.error('Faltan variables de Redis REST.');
+    console.error('Faltan variables de Supabase.');
     return res.status(500).json({ ok: false, error: 'Almacenamiento no configurado.' });
   }
   return handler(req, res);

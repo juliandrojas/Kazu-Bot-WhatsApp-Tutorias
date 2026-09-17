@@ -23,7 +23,7 @@ El servidor actual usa Express y escribe las conversaciones en `data/conversatio
 El proyecto ya incluye ambos cambios:
 
 1. `api/webhook/evolution.js` es la Vercel Function de `POST /webhook/evolution`; `vercel.json` conserva esa URL pública sin el prefijo `/api`.
-2. El estado se guarda en Redis REST mediante Vercel KV o Upstash, no en el sistema de archivos efímero de Vercel.
+2. El estado se guarda en la tabla `conversations` de Supabase, no en el sistema de archivos efímero de Vercel.
 
 No uses el sistema de archivos como base de datos en Vercel. Una petición puede ejecutarse en una instancia distinta de la anterior y los archivos no constituyen almacenamiento persistente para la aplicación.
 
@@ -39,8 +39,8 @@ En el proyecto de Vercel, abre **Settings → Environment Variables** y crea est
 | `TUTOR_PRICE` | `COP 45.000 por hora` | No |
 | `TUTOR_LOCATION` | Dirección de la tutoría | No |
 | `TUTOR_LOCATION_LINK` | Enlace de Google Maps | No |
-| `KV_REST_API_URL` | URL REST de Vercel KV / Upstash | Sí |
-| `KV_REST_API_TOKEN` | Token REST de Vercel KV / Upstash | Sí |
+| `SUPABASE_URL` | URL del proyecto Supabase | No |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave `service_role` de Supabase | Sí |
 
 Nunca pegues secretos en el repositorio ni los envíes por WhatsApp o capturas de pantalla.
 
@@ -48,8 +48,8 @@ Nunca pegues secretos en el repositorio ni los envíes por WhatsApp o capturas d
 
 1. Sube el proyecto a GitHub.
 2. En Vercel selecciona **Add New → Project** e importa el repositorio. Detectará Node.js automáticamente; no establezcas un directorio raíz distinto.
-3. En **Storage**, crea o conecta un store **Vercel KV** (o usa una base Upstash Redis REST). Vercel añade `KV_REST_API_URL` y `KV_REST_API_TOKEN` automáticamente; con Upstash añádelas manualmente.
-4. Añade las tres variables de Evolution API y `TUTOR_PRICE` para los entornos Production, Preview y Development. No subas `.env`.
+3. En Supabase, abre **SQL Editor**, ejecuta el contenido de `supabase/schema.sql` y copia la **Project URL** y la clave secreta `service_role` desde **Settings → API**.
+4. Añade las tres variables de Evolution API, `TUTOR_PRICE`, `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` para los entornos Production, Preview y Development. No subas `.env` ni expongas `SUPABASE_SERVICE_ROLE_KEY` en el navegador.
 5. Despliega el proyecto y copia el dominio que Vercel te entregue.
 6. Configura en Evolution API el webhook `MESSAGES_UPSERT` con esta URL:
 
