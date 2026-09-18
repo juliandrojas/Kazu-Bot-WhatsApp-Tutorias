@@ -1,6 +1,6 @@
 # Kazu Bot — tutorías por WhatsApp
 
-Este proyecto es un bot inicial para WhatsApp conectado a **Evolution API**. Guía a cada persona de forma ordenada: contacto → necesidad → material → recomendación → tarifa → disponibilidad → confirmación → ubicación.
+Este proyecto es un bot inicial para WhatsApp conectado a **Evolution API**. Guía a cada persona de forma ordenada: contacto → necesidad → material → recomendación → tarifa → disponibilidad → confirmación. Usa listas de WhatsApp para decisiones frecuentes, registra adjuntos y avisa al tutor cuando se confirma una solicitud.
 
 ## Documentación
 
@@ -63,6 +63,6 @@ El bot usa Supabase en local y en producción para que el estado sobreviva entre
 
 ## Antes de usarlo con clientes
 
-Supabase almacena por contacto el nombre, necesidad, material, horario, confirmación y fechas, además del estado que permite reanudar el diálogo. Añade autenticación/verificación del webhook y conecta la confirmación a un calendario real antes de atender clientes.
+Supabase almacena por contacto el nombre, necesidad, material, metadatos de los adjuntos, horario, confirmación y fechas, además del estado que permite reanudar el diálogo. Define `TUTOR_NOTIFY_NUMBER` para recibir las solicitudes confirmadas y ajusta `TUTOR_START_HOUR`/`TUTOR_END_HOUR` si tu jornada cambia. Los archivos permanecen en WhatsApp: la base solo conserva sus metadatos para que cada solicitud sea fácil de revisar. Añade autenticación/verificación del webhook y conecta la confirmación a un calendario real antes de atender clientes.
 
 Documentación útil: [webhooks de Evolution API](https://docs.evolutionfoundation.com.br/en/evolution-api/configuration/webhooks) y [envío de texto](https://github.com/evolution-foundation/evolution-docs/blob/main/docs/05-Endpoints/00-send-plain-text.md).

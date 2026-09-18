@@ -3,6 +3,7 @@ create table if not exists public.conversations (
   name text,
   need text,
   material text,
+  materials jsonb not null default '[]'::jsonb,
   availability text,
   scheduled_at timestamptz,
   confirmed boolean not null default false,
@@ -17,6 +18,7 @@ create table if not exists public.conversations (
 alter table public.conversations add column if not exists name text;
 alter table public.conversations add column if not exists need text;
 alter table public.conversations add column if not exists material text;
+alter table public.conversations add column if not exists materials jsonb not null default '[]'::jsonb;
 alter table public.conversations add column if not exists availability text;
 alter table public.conversations add column if not exists scheduled_at timestamptz;
 alter table public.conversations add column if not exists confirmed boolean not null default false;

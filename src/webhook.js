@@ -1,5 +1,5 @@
 import { advance } from './conversation.js';
-import { incomingContact, incomingMessageId, incomingText, isIncoming, sendText } from './evolution.js';
+import { incomingAttachment, incomingContact, incomingMessageId, incomingText, isIncoming, sendList, sendText } from './evolution.js';
 
 /** Crea el manejador HTTP independiente de Express o Vercel. */
 export function createEvolutionWebhook({ store, evolution, settings, logger = console }) {
@@ -8,7 +8,8 @@ export function createEvolutionWebhook({ store, evolution, settings, logger = co
 
     const contact = incomingContact(req.body);
     const message = incomingText(req.body);
-    if (!message) return res.status(200).json({ ok: true, ignored: true });
+    const attachment = incomingAttachment(req.body);
+    if (!message && !attachment) return res.status(200).json({ ok: true, ignored: true });
 
     const messageId = incomingMessageId(req.body);
     let claimedMessage = false;
@@ -18,9 +19,14 @@ export function createEvolutionWebhook({ store, evolution, settings, logger = co
         if (!claimedMessage) return res.status(200).json({ ok: true, ignored: true, duplicate: true });
       }
 
-      const result = advance(await store.get(contact), message, settings);
+      const result = advance(await store.get(contact), message || 'adjunto', settings, attachment);
       await store.set(contact, result.conversation);
-      await sendText({ ...evolution, number: contact, text: result.reply });
+      if (result.confirmed && settings.tutorNumber) {
+        const request = result.conversation.data;
+        await sendText({ ...evolution, number: settings.tutorNumber, text: `Nueva tutoría confirmada\nEstudiante: ${request.name}\nContacto: ${contact}\nTema: ${request.need}\nHorario: ${request.availability}\nMaterial: ${request.material ?? 'Sin adjuntos'}` });
+      }
+      if (result.options) await sendList({ ...evolution, number: contact, text: result.reply, options: result.options });
+      else await sendText({ ...evolution, number: contact, text: result.reply });
       return res.status(200).json({ ok: true });
     } catch (error) {
       if (claimedMessage) {

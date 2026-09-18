@@ -17,7 +17,12 @@ const store = new SupabaseConversationStore({
   url: process.env.SUPABASE_URL,
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
 });
-const settings = { price: process.env.TUTOR_PRICE ?? 'COP 45.000 por hora' };
+const settings = {
+  price: process.env.TUTOR_PRICE ?? 'COP 45.000 por hora',
+  tutorNumber: process.env.TUTOR_NOTIFY_NUMBER,
+  startHour: Number(process.env.TUTOR_START_HOUR ?? 7),
+  endHour: Number(process.env.TUTOR_END_HOUR ?? 21)
+};
 const evolution = { baseUrl: process.env.EVOLUTION_API_URL, apiKey: process.env.EVOLUTION_API_KEY, instance: process.env.EVOLUTION_INSTANCE };
 
 const app = express();

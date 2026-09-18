@@ -23,6 +23,16 @@ function isNo(text) {
   return ['no', 'n'].includes(normalize(text));
 }
 
+function choices(prefix) {
+  return {
+    buttonText: 'Elegir',
+    rows: [
+      { id: `${prefix}_yes`, title: 'Sí, continuar', description: 'Confirmar esta opción' },
+      { id: `${prefix}_no`, title: 'No', description: 'Cambiar o finalizar' }
+    ]
+  };
+}
+
 const months = {
   enero: 0,
   febrero: 1,
@@ -63,7 +73,7 @@ function formatHour(hour, minute, period) {
  * Acepta, por ejemplo, "lunes 21 de septiembre de 2026, 5:00 p. m.".
  * Valida que la fecha y el día de la semana realmente coincidan.
  */
-function parseAvailability(text) {
+function parseAvailability(text, settings) {
   const pattern = /^(domingo|lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado)\s+(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)(?:\s+de\s+(\d{4}))?\s*,?\s*(?:a\s+las\s+)?(\d{1,2})(?::(\d{2}))?\s*(a\.?\s*m\.?|p\.?\s*m\.?)?$/i;
   const match = text.trim().match(pattern);
   if (!match) return null;
@@ -96,9 +106,15 @@ function parseAvailability(text) {
 
   const formattedWeekday = `${weekday[0].toUpperCase()}${weekday.slice(1)}`;
   const formattedMonth = month === 'setiembre' ? 'septiembre' : month;
+  const scheduledAt = `${year}-${String(months[month] + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-05:00`;
+  const startHour = settings.startHour ?? 7;
+  const endHour = settings.endHour ?? 21;
+  const now = settings.now ? new Date(settings.now) : new Date();
+  if (new Date(scheduledAt) <= now || hour < startHour || hour >= endHour) return null;
+
   return {
     availability: `${formattedWeekday} ${day} de ${formattedMonth} de ${year}, ${formatHour(hour, minute, period)}`,
-    scheduledAt: `${year}-${String(months[month] + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-05:00`
+    scheduledAt
   };
 }
 
@@ -109,7 +125,7 @@ function reset() {
 /**
  * Avanza una conversación. No conoce WhatsApp ni HTTP: por eso es fácil de probar.
  */
-export function advance(current, incomingText, settings) {
+export function advance(current, incomingText, settings, attachment = null) {
   const text = incomingText?.trim();
   if (!text) return { conversation: current ?? reset(), reply: 'No alcancé a leer tu mensaje. ¿Podrías escribirlo de nuevo?' };
 
@@ -129,13 +145,22 @@ export function advance(current, incomingText, settings) {
     case STEPS.NEED:
       return {
         conversation: { step: STEPS.MATERIAL, data: { ...data, need: text } },
-        reply: '¿Tienes una guía, taller, fotos o apuntes para revisar? Responde *sí* y envíalos, o *no* si aún no los tienes.'
+        reply: '¿Tienes una guía, taller, fotos o apuntes para revisar? Puedes adjuntar imágenes, documentos, audio o video.',
+        options: choices('material')
       };
     case STEPS.MATERIAL:
+      if (attachment) {
+        const materials = [...(data.materials ?? []), attachment];
+        return {
+          conversation: { step: STEPS.MATERIAL, data: { ...data, materials, material: `${materials.length} adjunto(s)` } },
+          reply: `Recibí ${attachment.name ? `*${attachment.name}*` : `un(a) ${attachment.type}`}. Puedes enviar más archivos o escribe *listo* para continuar.`
+        };
+      }
       if (isNo(text)) {
         return {
           conversation: { step: STEPS.RECOMMENDATION, data: { ...data, material: 'No tiene material' } },
-          reply: 'No hay problema. Recomiendo tener a mano el temario, los últimos apuntes y las dudas puntuales antes de iniciar.\n\n¿Te parece bien esta preparación? (sí/no)'
+          reply: 'No hay problema. Recomiendo tener a mano el temario, los últimos apuntes y las dudas puntuales antes de iniciar.\n\n¿Te parece bien esta preparación?',
+          options: choices('recommendation')
         };
       }
       if (isYes(text)) {
@@ -146,8 +171,9 @@ export function advance(current, incomingText, settings) {
       }
       if (normalize(text) === 'listo') {
         return {
-          conversation: { step: STEPS.RECOMMENDATION, data: { ...data, material: 'Recibido' } },
-          reply: 'Gracias. Revisaremos el material antes de la sesión y empezaremos por los ejercicios que más te cuesten.\n\n¿Te parece bien esta preparación? (sí/no)'
+          conversation: { step: STEPS.RECOMMENDATION, data: { ...data, material: data.material ?? 'Recibido' } },
+          reply: 'Gracias. Revisaremos el material antes de la sesión y empezaremos por los ejercicios que más te cuesten.\n\n¿Te parece bien esta preparación?',
+          options: choices('recommendation')
         };
       }
       return { conversation, reply: 'Responde *sí* para enviar material o *no* si no lo tienes.' };
@@ -155,33 +181,36 @@ export function advance(current, incomingText, settings) {
       if (!isYes(text)) return { conversation, reply: 'Para continuar, responde *sí*. Si quieres cambiar la necesidad, escribe *inicio* y empezamos de nuevo.' };
       return {
         conversation: { step: STEPS.RATE, data },
-        reply: `La tarifa es *${settings.price}* una hora de tutoría.\n\n¿Quieres continuar? (sí/no)`
+        reply: `La tarifa es *${settings.price}* una hora de tutoría.\n\n¿Quieres continuar?`,
+        options: choices('rate')
       };
     case STEPS.RATE:
       if (isNo(text)) return { conversation: reset(), reply: 'Entiendo. Si más adelante quieres agendar una tutoría, escribe *inicio*. ¡Gracias!' };
       if (!isYes(text)) return { conversation, reply: 'Por favor responde *sí* para continuar o *no* para finalizar.' };
       return {
         conversation: { step: STEPS.AVAILABILITY, data },
-        reply: `¿Qué día, fecha y hora te quedan mejor? Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”.`
+        reply: `¿Qué día, fecha y hora te quedan mejor? Atendemos de ${settings.startHour ?? 7}:00 a ${settings.endHour ?? 21}:00 y solo horarios futuros. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”.`
       };
     case STEPS.AVAILABILITY:
-      const schedule = parseAvailability(text);
+      const schedule = parseAvailability(text, settings);
       if (!schedule) {
         return {
           conversation,
-          reply: `Indícame el día de la semana, la fecha y la hora con a. m. o p. m. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”.`
+          reply: `Indícame un día, fecha y hora válidos: debe ser un horario futuro dentro de la jornada y con a. m. o p. m. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”.`
         };
       }
       return {
         conversation: { step: STEPS.CONFIRMATION, data: { ...data, ...schedule } },
-        reply: `Resumen: tutoría de *${data.need}* para *${schedule.availability}*, a nombre de *${data.name}*.\n\n¿Confirmas la solicitud? (sí/no)`
+        reply: `Resumen de solicitud\n• Estudiante: *${data.name}*\n• Tema: *${data.need}*\n• Material: *${data.material ?? 'Sin adjuntos'}*\n• Fecha: *${schedule.availability}*\n\n¿Confirmas la solicitud?`,
+        options: choices('confirmation')
       };
     case STEPS.CONFIRMATION:
       if (isNo(text)) return { conversation: { step: STEPS.AVAILABILITY, data }, reply: 'De acuerdo. Indícame otro día y hora que te sirvan.' };
       if (!isYes(text)) return { conversation, reply: 'Responde *sí* para confirmar o *no* para cambiar el horario.' };
       return {
         conversation: { step: STEPS.COMPLETED, data: { ...data, confirmedAt: new Date().toISOString() } },
-        reply: '¡Solicitud confirmada! Te contactaremos para validar la disponibilidad final. Escribe *inicio* si necesitas otra tutoría.'
+        reply: '¡Solicitud confirmada! Avisamos al tutor para revisar tu solicitud y validar la disponibilidad final. Escribe *inicio* si necesitas otra tutoría.',
+        confirmed: true
       };
     case STEPS.COMPLETED:
       return { conversation, reply: 'Tu solicitud ya está registrada. Escribe *inicio* si quieres crear una nueva.' };

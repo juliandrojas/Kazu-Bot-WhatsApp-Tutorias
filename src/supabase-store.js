@@ -38,6 +38,7 @@ export class SupabaseConversationStore {
         name: conversation.data?.name ?? null,
         need: conversation.data?.need ?? null,
         material: conversation.data?.material ?? null,
+        materials: conversation.data?.materials ?? [],
         availability: conversation.data?.availability ?? null,
         scheduled_at: conversation.data?.scheduledAt ?? null,
         confirmed: conversation.step === 'completed',

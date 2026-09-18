@@ -13,7 +13,12 @@ const configurationError = missing.length
 const handler = !configurationError && supabaseUrl && supabaseServiceRoleKey
   ? createEvolutionWebhook({
       store: new SupabaseConversationStore({ url: supabaseUrl, serviceRoleKey: supabaseServiceRoleKey }),
-      settings: { price: process.env.TUTOR_PRICE ?? 'COP 45.000 por hora' },
+      settings: {
+        price: process.env.TUTOR_PRICE ?? 'COP 45.000 por hora',
+        tutorNumber: process.env.TUTOR_NOTIFY_NUMBER,
+        startHour: Number(process.env.TUTOR_START_HOUR ?? 7),
+        endHour: Number(process.env.TUTOR_END_HOUR ?? 21)
+      },
       evolution: {
         baseUrl: process.env.EVOLUTION_API_URL,
         apiKey: process.env.EVOLUTION_API_KEY,

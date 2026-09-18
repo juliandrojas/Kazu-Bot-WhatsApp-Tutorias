@@ -27,11 +27,29 @@ test('pide una fecha completa y consistente con el día de la semana', () => {
   const result = advance(current, 'lunes 22 de septiembre de 2026, 12:00 p. m.', settings);
 
   assert.equal(result.conversation, current);
-  assert.match(result.reply, /día de la semana, la fecha y la hora/);
+  assert.match(result.reply, /día, fecha y hora válidos/);
 });
 
 test('inicio reinicia el flujo', () => {
   const result = advance({ step: 'completed', data: { name: 'Ana' } }, 'inicio', settings);
   assert.equal(result.reply, firstMessage);
   assert.equal(result.conversation.step, 'contact');
+});
+
+test('registra adjuntos y no permite horarios fuera de la jornada', () => {
+  const material = advance(
+    { step: 'material', data: { name: 'Ana', need: 'Álgebra' } },
+    'adjunto', settings,
+    { type: 'documento', name: 'taller.pdf', mimeType: 'application/pdf', messageId: 'M1' }
+  );
+  assert.equal(material.conversation.data.material, '1 adjunto(s)');
+  assert.equal(material.conversation.data.materials[0].name, 'taller.pdf');
+
+  const availability = advance(
+    { step: 'availability', data: { name: 'Ana', need: 'Álgebra' } },
+    'viernes 25 de septiembre de 2026, 6:00 a. m.',
+    { ...settings, now: '2026-09-18T12:00:00-05:00', startHour: 7, endHour: 21 }
+  );
+  assert.equal(availability.conversation.step, 'availability');
+  assert.match(availability.reply, /día, fecha y hora válidos/);
 });

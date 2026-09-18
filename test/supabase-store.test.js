@@ -37,6 +37,7 @@ test('persiste los campos de la solicitud junto con el estado del diálogo', asy
       name: 'Ana',
       need: 'Álgebra',
       material: 'Recibido',
+      materials: [],
       availability: 'Jueves 5 pm',
       scheduled_at: '2026-09-24T17:00:00-05:00',
       confirmed: true,
