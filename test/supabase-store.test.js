@@ -22,6 +22,7 @@ test('persiste los campos de la solicitud junto con el estado del diálogo', asy
         need: 'Álgebra',
         material: 'Recibido',
         availability: 'Jueves 5 pm',
+        scheduledAt: '2026-09-24T17:00:00-05:00',
         confirmedAt: '2026-09-17T17:00:00.000Z'
       }
     };
@@ -37,6 +38,7 @@ test('persiste los campos de la solicitud junto con el estado del diálogo', asy
       need: 'Álgebra',
       material: 'Recibido',
       availability: 'Jueves 5 pm',
+      scheduled_at: '2026-09-24T17:00:00-05:00',
       confirmed: true,
       confirmed_at: '2026-09-17T17:00:00.000Z',
       conversation,

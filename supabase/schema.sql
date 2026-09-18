@@ -4,6 +4,7 @@ create table if not exists public.conversations (
   need text,
   material text,
   availability text,
+  scheduled_at timestamptz,
   confirmed boolean not null default false,
   confirmed_at timestamptz,
   conversation jsonb not null default '{"step":"contact","data":{}}'::jsonb,
@@ -17,6 +18,7 @@ alter table public.conversations add column if not exists name text;
 alter table public.conversations add column if not exists need text;
 alter table public.conversations add column if not exists material text;
 alter table public.conversations add column if not exists availability text;
+alter table public.conversations add column if not exists scheduled_at timestamptz;
 alter table public.conversations add column if not exists confirmed boolean not null default false;
 alter table public.conversations add column if not exists confirmed_at timestamptz;
 alter table public.conversations add column if not exists created_at timestamptz not null default now();

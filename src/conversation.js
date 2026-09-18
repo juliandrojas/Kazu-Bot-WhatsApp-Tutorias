@@ -23,6 +23,85 @@ function isNo(text) {
   return ['no', 'n'].includes(normalize(text));
 }
 
+const months = {
+  enero: 0,
+  febrero: 1,
+  marzo: 2,
+  abril: 3,
+  mayo: 4,
+  junio: 5,
+  julio: 6,
+  agosto: 7,
+  septiembre: 8,
+  setiembre: 8,
+  octubre: 9,
+  noviembre: 10,
+  diciembre: 11
+};
+
+const weekdays = {
+  domingo: 0,
+  lunes: 1,
+  martes: 2,
+  'miércoles': 3,
+  miercoles: 3,
+  jueves: 4,
+  viernes: 5,
+  sábado: 6,
+  sabado: 6
+};
+
+function formatHour(hour, minute, period) {
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  const displayPeriod = period
+    ? (period.startsWith('a') ? 'a. m.' : 'p. m.')
+    : (hour >= 12 ? 'p. m.' : 'a. m.');
+  return `${displayHour}:${String(minute).padStart(2, '0')} ${displayPeriod}`;
+}
+
+/**
+ * Acepta, por ejemplo, "lunes 21 de septiembre de 2026, 5:00 p. m.".
+ * Valida que la fecha y el día de la semana realmente coincidan.
+ */
+function parseAvailability(text) {
+  const pattern = /^(domingo|lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado)\s+(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)(?:\s+de\s+(\d{4}))?\s*,?\s*(?:a\s+las\s+)?(\d{1,2})(?::(\d{2}))?\s*(a\.?\s*m\.?|p\.?\s*m\.?)?$/i;
+  const match = text.trim().match(pattern);
+  if (!match) return null;
+
+  const [, weekdayName, dayText, monthName, yearText, hourText, minuteText, periodText] = match;
+  const weekday = normalize(weekdayName);
+  const month = normalize(monthName);
+  const day = Number(dayText);
+  const year = yearText ? Number(yearText) : new Date().getFullYear();
+  let hour = Number(hourText);
+  const minute = minuteText ? Number(minuteText) : 0;
+  const period = periodText ? normalize(periodText).replace(/\s/g, '') : null;
+
+  if (minute > 59 || hour < 0 || hour > 23 || !Object.hasOwn(months, month)) return null;
+  if (period) {
+    if (hour < 1 || hour > 12) return null;
+    if (period.startsWith('a') && hour === 12) hour = 0;
+    if (period.startsWith('p') && hour !== 12) hour += 12;
+  } else if (hour < 13) {
+    return null;
+  }
+
+  const date = new Date(Date.UTC(year, months[month], day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== months[month] ||
+    date.getUTCDate() !== day ||
+    date.getUTCDay() !== weekdays[weekday]
+  ) return null;
+
+  const formattedWeekday = `${weekday[0].toUpperCase()}${weekday.slice(1)}`;
+  const formattedMonth = month === 'setiembre' ? 'septiembre' : month;
+  return {
+    availability: `${formattedWeekday} ${day} de ${formattedMonth} de ${year}, ${formatHour(hour, minute, period)}`,
+    scheduledAt: `${year}-${String(months[month] + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-05:00`
+  };
+}
+
 function reset() {
   return { step: STEPS.CONTACT, data: {} };
 }
@@ -76,19 +155,26 @@ export function advance(current, incomingText, settings) {
       if (!isYes(text)) return { conversation, reply: 'Para continuar, responde *sí*. Si quieres cambiar la necesidad, escribe *inicio* y empezamos de nuevo.' };
       return {
         conversation: { step: STEPS.RATE, data },
-        reply: `La tarifa es *${settings.price}*. Incluye preparación y una hora de tutoría.\n\n¿Quieres continuar? (sí/no)`
+        reply: `La tarifa es *${settings.price}* una hora de tutoría.\n\n¿Quieres continuar? (sí/no)`
       };
     case STEPS.RATE:
       if (isNo(text)) return { conversation: reset(), reply: 'Entiendo. Si más adelante quieres agendar una tutoría, escribe *inicio*. ¡Gracias!' };
       if (!isYes(text)) return { conversation, reply: 'Por favor responde *sí* para continuar o *no* para finalizar.' };
       return {
         conversation: { step: STEPS.AVAILABILITY, data },
-        reply: '¿Qué día y hora te quedan mejor? Por ejemplo: “jueves 5:00 p. m.”.'
+        reply: `¿Qué día, fecha y hora te quedan mejor? Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”.`
       };
     case STEPS.AVAILABILITY:
+      const schedule = parseAvailability(text);
+      if (!schedule) {
+        return {
+          conversation,
+          reply: `Indícame el día de la semana, la fecha y la hora con a. m. o p. m. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”.`
+        };
+      }
       return {
-        conversation: { step: STEPS.CONFIRMATION, data: { ...data, availability: text } },
-        reply: `Resumen: tutoría de *${data.need}* para *${text}*, a nombre de *${data.name}*.\n\n¿Confirmas la solicitud? (sí/no)`
+        conversation: { step: STEPS.CONFIRMATION, data: { ...data, ...schedule } },
+        reply: `Resumen: tutoría de *${data.need}* para *${schedule.availability}*, a nombre de *${data.name}*.\n\n¿Confirmas la solicitud? (sí/no)`
       };
     case STEPS.CONFIRMATION:
       if (isNo(text)) return { conversation: { step: STEPS.AVAILABILITY, data }, reply: 'De acuerdo. Indícame otro día y hora que te sirvan.' };
