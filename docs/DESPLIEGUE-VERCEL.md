@@ -39,6 +39,10 @@ En el proyecto de Vercel, abre **Settings → Environment Variables** y crea est
 | `TUTOR_LOCATION_LINK` | Enlace de Google Maps | No |
 | `SUPABASE_URL` | URL del proyecto Supabase | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clave `service_role` de Supabase | Sí |
+| `WEBHOOK_SECRET` | Secreto compartido en `x-webhook-secret` | Sí |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Acceso al panel `/admin/` | Sí |
+| `CRON_SECRET` | Protege la copia diaria | Sí |
+| `GOOGLE_CALENDAR_ID`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | Integración estable con Google Calendar | Sí |
 
 Nunca pegues secretos en el repositorio ni los envíes por WhatsApp o capturas de pantalla.
 
@@ -47,7 +51,7 @@ Nunca pegues secretos en el repositorio ni los envíes por WhatsApp o capturas d
 1. Sube el proyecto a GitHub.
 2. En Vercel selecciona **Add New → Project** e importa el repositorio. Detectará Node.js automáticamente; no establezcas un directorio raíz distinto.
 3. En Supabase, abre **SQL Editor**, ejecuta el contenido de `supabase/schema.sql` y copia la **Project URL** y la clave secreta `service_role` desde **Settings → API**. Si ya habías creado la tabla, aplica primero `supabase/migrations/20260917120000_add_conversation_details.sql`.
-4. Añade las tres variables de Evolution API, `TUTOR_PRICE`, `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` para los entornos Production, Preview y Development. No subas `.env` ni expongas `SUPABASE_SERVICE_ROLE_KEY` en el navegador.
+4. Añade las variables de `.env.example` para los entornos Production, Preview y Development. En Evolution API configura el encabezado `x-webhook-secret` con el valor de `WEBHOOK_SECRET`. No subas `.env` ni expongas secretos en el navegador.
 5. Despliega el proyecto y copia el dominio que Vercel te entregue.
 6. Configura en Evolution API el webhook `MESSAGES_UPSERT` con esta URL:
 
@@ -72,3 +76,6 @@ Vercel permite configurar una duración máxima para las funciones, pero para es
 - [ ] La base de datos guarda y recupera una conversación por número de contacto.
 - [ ] Se probó con un número distinto al número del bot.
 - [ ] Se revisaron los logs de Vercel y de Evolution API ante un error.
+- [ ] Se aplicó la migración `20260918110000_add_operations_tables.sql`.
+- [ ] `/admin/` solicita credenciales y carga solicitudes correctamente.
+- [ ] Se probó una confirmación y se verificó el evento en Google Calendar.

@@ -61,8 +61,17 @@ El formato de eventos puede variar algo entre versiones. El bot acepta el format
 
 El bot usa Supabase en local y en producción para que el estado sobreviva entre reinicios y funciones serverless. Consulta la [guía de Vercel](docs/DESPLIEGUE-VERCEL.md) para importar el repositorio de GitHub, definir variables y configurar Evolution API.
 
+## Operación: panel, calendario, seguridad y copias
+
+- El panel está en `/admin/` y muestra las últimas 100 solicitudes. Requiere `ADMIN_USERNAME` y `ADMIN_PASSWORD`; el navegador solicitará las credenciales.
+- Define `WEBHOOK_SECRET` y configura exactamente el mismo valor en el encabezado `x-webhook-secret` que Evolution API envía al webhook. Sin esta variable el servidor no inicia y Vercel rechaza el webhook como configuración incompleta.
+- Para crear un evento de una hora automáticamente al confirmar, configura `GOOGLE_CALENDAR_ID`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` y `GOOGLE_REFRESH_TOKEN`. El calendario debe estar compartido con la cuenta que autorizó el token. Sin estas variables, la agenda sigue funcionando y el panel marcará el evento como pendiente.
+- Los fallos del webhook se guardan en `webhook_errors` sin secretos ni cuerpos de mensajes. Vercel ejecuta una copia diaria a las 6:00 UTC en `request_backups`; el botón del panel permite crear una adicional. Configura `CRON_SECRET` en Vercel.
+
+Aplica `supabase/migrations/20260918110000_add_operations_tables.sql` si la base ya existe, o ejecuta `supabase/schema.sql` en una instalación nueva.
+
 ## Antes de usarlo con clientes
 
-Supabase almacena por contacto el nombre, necesidad, material, metadatos de los adjuntos, horario, confirmación y fechas, además del estado que permite reanudar el diálogo. Define `TUTOR_NOTIFY_NUMBER` para recibir las solicitudes confirmadas y ajusta `TUTOR_START_HOUR`/`TUTOR_END_HOUR` si tu jornada cambia. Los archivos permanecen en WhatsApp: la base solo conserva sus metadatos para que cada solicitud sea fácil de revisar. Añade autenticación/verificación del webhook y conecta la confirmación a un calendario real antes de atender clientes.
+Supabase almacena por contacto el nombre, necesidad, material, metadatos de los adjuntos, horario, confirmación y fechas, además del estado que permite reanudar el diálogo. Define `TUTOR_NOTIFY_NUMBER` para recibir las solicitudes confirmadas y ajusta `TUTOR_START_HOUR`/`TUTOR_END_HOUR` si tu jornada cambia. Los archivos permanecen en WhatsApp: la base solo conserva sus metadatos para que cada solicitud sea fácil de revisar.
 
 Documentación útil: [webhooks de Evolution API](https://docs.evolutionfoundation.com.br/en/evolution-api/configuration/webhooks) y [envío de texto](https://github.com/evolution-foundation/evolution-docs/blob/main/docs/05-Endpoints/00-send-plain-text.md).

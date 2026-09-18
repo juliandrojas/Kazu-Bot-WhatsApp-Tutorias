@@ -1,7 +1,7 @@
 import { SupabaseConversationStore } from '../../src/supabase-store.js';
 import { createEvolutionWebhook } from '../../src/webhook.js';
 
-const required = ['EVOLUTION_API_URL', 'EVOLUTION_API_KEY', 'EVOLUTION_INSTANCE'];
+const required = ['EVOLUTION_API_URL', 'EVOLUTION_API_KEY', 'EVOLUTION_INSTANCE', 'WEBHOOK_SECRET'];
 const missing = required.filter((key) => !process.env[key]);
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -23,7 +23,9 @@ const handler = !configurationError && supabaseUrl && supabaseServiceRoleKey
         baseUrl: process.env.EVOLUTION_API_URL,
         apiKey: process.env.EVOLUTION_API_KEY,
         instance: process.env.EVOLUTION_INSTANCE
-      }
+      },
+      webhookSecret: process.env.WEBHOOK_SECRET,
+      calendar: { calendarId: process.env.GOOGLE_CALENDAR_ID, accessToken: process.env.GOOGLE_CALENDAR_ACCESS_TOKEN, clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, refreshToken: process.env.GOOGLE_REFRESH_TOKEN }
     })
   : null;
 

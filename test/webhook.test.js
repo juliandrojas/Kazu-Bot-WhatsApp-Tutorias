@@ -62,6 +62,13 @@ test('ignora un reintento con el mismo identificador de WhatsApp', async () => {
   }
 });
 
+test('rechaza un webhook sin el secreto configurado', async () => {
+  const handler = createEvolutionWebhook({ store: {}, settings: {}, evolution: {}, webhookSecret: 'secreto-prueba' });
+  const response = responseRecorder();
+  await handler({ body: {}, headers: {} }, response);
+  assert.equal(response.code, 401);
+});
+
 test('avisa al tutor cuando una solicitud queda confirmada', async () => {
   const sentMessages = [];
   const previousFetch = globalThis.fetch;
