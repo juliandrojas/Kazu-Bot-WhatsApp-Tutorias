@@ -33,6 +33,7 @@ test('pide una fecha completa y consistente con el día de la semana', () => {
 test('inicio reinicia el flujo', () => {
   const result = advance({ step: 'completed', data: { name: 'Ana' } }, 'inicio', settings);
   assert.equal(result.reply, firstMessage);
+  assert.match(result.reply, /responde mensajes entre 12:00 m\. y 1:00 p\. m\., o después de las 5:00 p\. m\./);
   assert.equal(result.conversation.step, 'contact');
 });
 

@@ -9,7 +9,9 @@ const STEPS = {
   COMPLETED: 'completed'
 };
 
-export const firstMessage = '¡Hola! Soy Kazu, el asistente de tutorías. Te ayudaré a organizar tu clase.\n\n¿Cómo te llamas?';
+const RESPONSE_WINDOW = 'El tutor responde mensajes entre 12:00 m. y 1:00 p. m., o después de las 5:00 p. m.';
+
+export const firstMessage = `¡Hola! Soy Kazu, el asistente de tutorías. Te ayudaré a organizar tu clase.\n\n${RESPONSE_WINDOW}\n\n¿Cómo te llamas?`;
 
 function normalize(text) {
   return text.trim().toLowerCase();
@@ -238,7 +240,7 @@ export function advance(current, incomingText, settings, attachment = null) {
       if (!isYes(text)) return { conversation, reply: 'Responde *sí* para confirmar o *no* para cambiar el horario.' };
       return {
         conversation: { step: STEPS.COMPLETED, data: { ...data, confirmedAt: new Date().toISOString() } },
-        reply: '¡Solicitud confirmada! Tu solicitud fue enviada al tutor para revisar la disponibilidad final. Escribe *inicio* si necesitas otra tutoría.',
+        reply: `¡Solicitud confirmada! Tu solicitud fue enviada al tutor para revisar la disponibilidad final.\n\n${RESPONSE_WINDOW}\n\nEscribe *inicio* si necesitas otra tutoría.`,
         confirmed: true
       };
     case STEPS.COMPLETED:
