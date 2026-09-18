@@ -27,7 +27,7 @@ test('pide una fecha completa y consistente con el día de la semana', () => {
   const result = advance(current, 'lunes 22 de septiembre de 2026, 12:00 p. m.', settings);
 
   assert.equal(result.conversation, current);
-  assert.match(result.reply, /día, fecha y hora válidos/);
+  assert.match(result.reply, /día de la semana no coincide/);
 });
 
 test('inicio reinicia el flujo', () => {
@@ -51,5 +51,5 @@ test('registra adjuntos y no permite horarios fuera de la jornada', () => {
     { ...settings, now: '2026-09-18T12:00:00-05:00', startHour: 7, endHour: 21 }
   );
   assert.equal(availability.conversation.step, 'availability');
-  assert.match(availability.reply, /día, fecha y hora válidos/);
+  assert.match(availability.reply, /Atendemos de 7:00 a 21:00/);
 });

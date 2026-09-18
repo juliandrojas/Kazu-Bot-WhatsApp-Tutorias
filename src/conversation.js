@@ -76,7 +76,7 @@ function formatHour(hour, minute, period) {
 function parseAvailability(text, settings) {
   const pattern = /^(domingo|lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado)\s+(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)(?:\s+de\s+(\d{4}))?\s*,?\s*(?:a\s+las\s+)?(\d{1,2})(?::(\d{2}))?\s*(a\.?\s*m\.?|p\.?\s*m\.?)?$/i;
   const match = text.trim().match(pattern);
-  if (!match) return null;
+  if (!match) return { error: 'format' };
 
   const [, weekdayName, dayText, monthName, yearText, hourText, minuteText, periodText] = match;
   const weekday = normalize(weekdayName);
@@ -87,13 +87,13 @@ function parseAvailability(text, settings) {
   const minute = minuteText ? Number(minuteText) : 0;
   const period = periodText ? normalize(periodText).replace(/\s/g, '') : null;
 
-  if (minute > 59 || hour < 0 || hour > 23 || !Object.hasOwn(months, month)) return null;
+  if (minute > 59 || hour < 0 || hour > 23 || !Object.hasOwn(months, month)) return { error: 'time' };
   if (period) {
-    if (hour < 1 || hour > 12) return null;
+    if (hour < 1 || hour > 12) return { error: 'time' };
     if (period.startsWith('a') && hour === 12) hour = 0;
     if (period.startsWith('p') && hour !== 12) hour += 12;
   } else if (hour < 13) {
-    return null;
+    return { error: 'period' };
   }
 
   const date = new Date(Date.UTC(year, months[month], day));
@@ -102,7 +102,7 @@ function parseAvailability(text, settings) {
     date.getUTCMonth() !== months[month] ||
     date.getUTCDate() !== day ||
     date.getUTCDay() !== weekdays[weekday]
-  ) return null;
+  ) return { error: 'date' };
 
   const formattedWeekday = `${weekday[0].toUpperCase()}${weekday.slice(1)}`;
   const formattedMonth = month === 'setiembre' ? 'septiembre' : month;
@@ -110,12 +110,31 @@ function parseAvailability(text, settings) {
   const startHour = settings.startHour ?? 7;
   const endHour = settings.endHour ?? 21;
   const now = settings.now ? new Date(settings.now) : new Date();
-  if (new Date(scheduledAt) <= now || hour < startHour || hour >= endHour) return null;
+  if (new Date(scheduledAt) <= now) return { error: 'past' };
+  if (hour < startHour || hour >= endHour) return { error: 'businessHours' };
 
   return {
     availability: `${formattedWeekday} ${day} de ${formattedMonth} de ${year}, ${formatHour(hour, minute, period)}`,
     scheduledAt
   };
+}
+
+function availabilityErrorReply(error, settings) {
+  const example = `“lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”`;
+  switch (error) {
+    case 'past':
+      return 'Ese horario ya pasó. Elige una fecha y hora posteriores a este momento.';
+    case 'businessHours':
+      return `Atendemos de ${settings.startHour ?? 7}:00 a ${settings.endHour ?? 21}:00. Elige una hora dentro de esa jornada.`;
+    case 'date':
+      return 'El día de la semana no coincide con la fecha, o esa fecha no existe. Revísala e intenta de nuevo.';
+    case 'period':
+      return `Falta indicar si la hora es a. m. o p. m. Por ejemplo: ${example}.`;
+    case 'time':
+      return 'La hora no es válida. Usa una hora entre 1:00 y 12:59 con a. m. o p. m.';
+    default:
+      return `Escríbeme el día, la fecha y la hora. Por ejemplo: ${example}.`;
+  }
 }
 
 function reset() {
@@ -193,10 +212,10 @@ export function advance(current, incomingText, settings, attachment = null) {
       };
     case STEPS.AVAILABILITY:
       const schedule = parseAvailability(text, settings);
-      if (!schedule) {
+      if (schedule.error) {
         return {
           conversation,
-          reply: `Indícame un día, fecha y hora válidos: debe ser un horario futuro dentro de la jornada y con a. m. o p. m. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”.`
+          reply: availabilityErrorReply(schedule.error, settings)
         };
       }
       return {
