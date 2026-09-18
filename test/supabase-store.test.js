@@ -47,3 +47,24 @@ test('persiste los campos de la solicitud junto con el estado del diálogo', asy
     globalThis.fetch = previousFetch;
   }
 });
+
+test('reclama un mensaje solo cuando Supabase lo inserta por primera vez', async () => {
+  const previousFetch = globalThis.fetch;
+  const responses = [
+    new Response(JSON.stringify([{ message_id: 'ABC123' }]), { status: 201 }),
+    new Response(JSON.stringify([]), { status: 201 })
+  ];
+  globalThis.fetch = async () => responses.shift();
+
+  try {
+    const store = new SupabaseConversationStore({
+      url: 'https://example.supabase.co',
+      serviceRoleKey: 'service-role-key'
+    });
+
+    assert.equal(await store.claimMessage('ABC123'), true);
+    assert.equal(await store.claimMessage('ABC123'), false);
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});

@@ -21,5 +21,11 @@ alter table public.conversations add column if not exists confirmed boolean not 
 alter table public.conversations add column if not exists confirmed_at timestamptz;
 alter table public.conversations add column if not exists created_at timestamptz not null default now();
 
+create table if not exists public.processed_messages (
+  message_id text primary key,
+  processed_at timestamptz not null default now()
+);
+
 -- La función de Vercel usa la service_role key; no habilites acceso anónimo a esta tabla.
 alter table public.conversations enable row level security;
+alter table public.processed_messages enable row level security;

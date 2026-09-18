@@ -47,4 +47,30 @@ export class SupabaseConversationStore {
     });
     if (!response.ok) throw new Error(`Supabase respondió ${response.status}: ${await response.text()}`);
   }
+
+  /**
+   * Registra un evento una sola vez. Un conflicto de clave primaria indica que
+   * Evolution API está reintentando exactamente el mismo mensaje.
+   */
+  async claimMessage(messageId) {
+    const response = await fetch(`${this.url}/rest/v1/processed_messages?on_conflict=message_id`, {
+      method: 'POST',
+      headers: this.headers({
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=ignore-duplicates,return=representation'
+      }),
+      body: JSON.stringify({ message_id: messageId })
+    });
+    if (!response.ok) throw new Error(`Supabase respondió ${response.status}: ${await response.text()}`);
+    const records = await response.json();
+    return records.length > 0;
+  }
+
+  async releaseMessage(messageId) {
+    const response = await fetch(
+      `${this.url}/rest/v1/processed_messages?message_id=eq.${encodeURIComponent(messageId)}`,
+      { method: 'DELETE', headers: this.headers() }
+    );
+    if (!response.ok) throw new Error(`Supabase respondió ${response.status}: ${await response.text()}`);
+  }
 }

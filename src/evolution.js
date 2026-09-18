@@ -17,6 +17,11 @@ export function incomingContact(payload) {
   return payload?.data?.key?.remoteJid ?? payload?.key?.remoteJid;
 }
 
+/** Identificador estable que Evolution API conserva cuando reintenta un mismo evento. */
+export function incomingMessageId(payload) {
+  return payload?.data?.key?.id ?? payload?.key?.id;
+}
+
 export function isIncoming(payload) {
   const key = payload?.data?.key ?? payload?.key;
   return Boolean(key?.remoteJid) && !key.fromMe && !key.remoteJid.endsWith('@g.us');
