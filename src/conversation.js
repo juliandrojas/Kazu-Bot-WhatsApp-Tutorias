@@ -61,6 +61,12 @@ const weekdays = {
   sabado: 6
 };
 
+const TUTOR_SCHEDULE = 'lunes a viernes, de 8:00 a. m. a 12:00 m. y de 1:00 p. m. a 5:00 p. m.';
+
+function isWithinTutorSchedule(weekday, hour) {
+  return weekday >= 1 && weekday <= 5 && ((hour >= 8 && hour < 12) || (hour >= 13 && hour < 17));
+}
+
 function formatHour(hour, minute, period) {
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
   const displayPeriod = period
@@ -107,11 +113,10 @@ function parseAvailability(text, settings) {
   const formattedWeekday = `${weekday[0].toUpperCase()}${weekday.slice(1)}`;
   const formattedMonth = month === 'setiembre' ? 'septiembre' : month;
   const scheduledAt = `${year}-${String(months[month] + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-05:00`;
-  const startHour = settings.startHour ?? 7;
-  const endHour = settings.endHour ?? 21;
   const now = settings.now ? new Date(settings.now) : new Date();
   if (new Date(scheduledAt) <= now) return { error: 'past' };
-  if (hour < startHour || hour >= endHour) return { error: 'businessHours' };
+  if (weekdays[weekday] === 0 || weekdays[weekday] === 6) return { error: 'weekend' };
+  if (!isWithinTutorSchedule(weekdays[weekday], hour)) return { error: 'businessHours' };
 
   return {
     availability: `${formattedWeekday} ${day} de ${formattedMonth} de ${year}, ${formatHour(hour, minute, period)}`,
@@ -125,7 +130,9 @@ function availabilityErrorReply(error, settings) {
     case 'past':
       return 'Ese horario ya pasó. Elige una fecha y hora posteriores a este momento.';
     case 'businessHours':
-      return `Atendemos de ${settings.startHour ?? 7}:00 a ${settings.endHour ?? 21}:00. Elige una hora dentro de esa jornada.`;
+      return `Nuestro horario es ${TUTOR_SCHEDULE} Elige una hora dentro de esas franjas.`;
+    case 'weekend':
+      return `Atendemos ${TUTOR_SCHEDULE} Elige un día entre lunes y viernes.`;
     case 'date':
       return 'El día de la semana no coincide con la fecha, o esa fecha no existe. Revísala e intenta de nuevo.';
     case 'period':
@@ -208,7 +215,7 @@ export function advance(current, incomingText, settings, attachment = null) {
       if (!isYes(text)) return { conversation, reply: 'Por favor responde *sí* para continuar o *no* para finalizar.' };
       return {
         conversation: { step: STEPS.AVAILABILITY, data },
-        reply: `¿Qué día, fecha y hora te quedan mejor? Atendemos de ${settings.startHour ?? 7}:00 a ${settings.endHour ?? 21}:00 y solo horarios futuros. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 5:00 p. m.”.`
+        reply: `¿Qué día, fecha y hora te quedan mejor? Atendemos ${TUTOR_SCHEDULE} Solo podemos agendar horarios futuros. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 4:00 p. m.”.`
       };
     case STEPS.AVAILABILITY:
       const schedule = parseAvailability(text, settings);
