@@ -209,7 +209,7 @@ export function advance(current, incomingText, settings, attachment = null) {
       if (!isYes(text)) return { conversation, reply: 'Responde *sí* para confirmar o *no* para cambiar el horario.' };
       return {
         conversation: { step: STEPS.COMPLETED, data: { ...data, confirmedAt: new Date().toISOString() } },
-        reply: '¡Solicitud confirmada! Avisamos al tutor para revisar tu solicitud y validar la disponibilidad final. Escribe *inicio* si necesitas otra tutoría.',
+        reply: '¡Solicitud confirmada! Tu solicitud fue enviada al tutor para revisar la disponibilidad final. Escribe *inicio* si necesitas otra tutoría.',
         confirmed: true
       };
     case STEPS.COMPLETED:

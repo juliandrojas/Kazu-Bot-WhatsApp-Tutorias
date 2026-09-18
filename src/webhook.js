@@ -23,7 +23,8 @@ export function createEvolutionWebhook({ store, evolution, settings, logger = co
       await store.set(contact, result.conversation);
       if (result.confirmed && settings.tutorNumber) {
         const request = result.conversation.data;
-        await sendText({ ...evolution, number: settings.tutorNumber, text: `Nueva tutoría confirmada\nEstudiante: ${request.name}\nContacto: ${contact}\nTema: ${request.need}\nHorario: ${request.availability}\nMaterial: ${request.material ?? 'Sin adjuntos'}` });
+        const phone = contact.replace(/@s\.whatsapp\.net$/, '');
+        await sendText({ ...evolution, number: settings.tutorNumber, text: `Nueva tutoría confirmada\nEstudiante: ${request.name}\nContacto: ${phone}\nTema: ${request.need}\nHorario: ${request.availability}\nMaterial: ${request.material ?? 'Sin adjuntos'}` });
       }
       if (result.options) await sendList({ ...evolution, number: contact, text: result.reply, options: result.options });
       else await sendText({ ...evolution, number: contact, text: result.reply });

@@ -84,6 +84,8 @@ test('avisa al tutor cuando una solicitud queda confirmada', async () => {
     assert.equal(response.code, 200);
     assert.equal(sentMessages.length, 2);
     assert.match(JSON.parse(sentMessages[0].options.body).text, /Nueva tutoría confirmada/);
+    assert.match(JSON.parse(sentMessages[0].options.body).text, /Contacto: 573001112233/);
+    assert.doesNotMatch(JSON.parse(sentMessages[0].options.body).text, /@s\.whatsapp\.net/);
     assert.equal(JSON.parse(sentMessages[0].options.body).number, '573009999999');
   } finally {
     globalThis.fetch = previousFetch;
