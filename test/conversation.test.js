@@ -13,9 +13,9 @@ test('recorre una solicitud hasta la confirmación', () => {
   result = advance(state, 'sí', settings); state = result.conversation;
   assert.match(result.reply, /45.000/);
   result = advance(state, 'sí', settings); state = result.conversation;
-  result = advance(state, 'Jueves 24 de septiembre de 2026, 4:00 p. m.', settings); state = result.conversation;
-  assert.equal(result.conversation.data.scheduledAt, '2026-09-24T16:00:00-05:00');
-  assert.equal(result.conversation.data.availability, 'Jueves 24 de septiembre de 2026, 4:00 p. m.');
+  result = advance(state, 'Jueves 24 de septiembre de 2026, 6:00 p. m.', settings); state = result.conversation;
+  assert.equal(result.conversation.data.scheduledAt, '2026-09-24T18:00:00-05:00');
+  assert.equal(result.conversation.data.availability, 'Jueves 24 de septiembre de 2026, 6:00 p. m.');
   result = advance(state, 'sí', settings);
   assert.match(result.reply, /Solicitud confirmada/);
   assert.doesNotMatch(result.reply, /\d\/8|📍|Mapa:/);
@@ -51,15 +51,17 @@ test('registra adjuntos y no permite horarios fuera de la jornada', () => {
     { ...settings, now: '2026-09-18T12:00:00-05:00', startHour: 7, endHour: 21 }
   );
   assert.equal(availability.conversation.step, 'availability');
-  assert.match(availability.reply, /lunes a viernes, de 8:00 a\. m\. a 12:00 m\. y de 1:00 p\. m\. a 5:00 p\. m\./);
+  assert.match(availability.reply, /Solo podemos agendar entre 7:00 y 21:00/);
 });
 
-test('solo permite horarios de lunes a viernes en las dos franjas de atención', () => {
+test('bloquea el horario laboral y los domingos, pero permite sábados', () => {
   const current = { step: 'availability', data: { name: 'Ana', need: 'Álgebra' } };
   const settingsWithNow = { ...settings, now: '2026-09-18T12:00:00-05:00' };
-  const weekend = advance(current, 'sábado 19 de septiembre de 2026, 10:00 a. m.', settingsWithNow);
-  const lunch = advance(current, 'lunes 21 de septiembre de 2026, 12:30 p. m.', settingsWithNow);
+  const sunday = advance(current, 'domingo 20 de septiembre de 2026, 10:00 a. m.', settingsWithNow);
+  const workHour = advance(current, 'lunes 21 de septiembre de 2026, 2:00 p. m.', settingsWithNow);
+  const saturday = advance(current, 'sábado 19 de septiembre de 2026, 10:00 a. m.', settingsWithNow);
 
-  assert.match(weekend.reply, /Elige un día entre lunes y viernes/);
-  assert.match(lunch.reply, /Nuestro horario es lunes a viernes/);
+  assert.match(sunday.reply, /No agendamos tutorías los domingos/);
+  assert.match(workHour.reply, /No podemos agendar en horario laboral/);
+  assert.equal(saturday.conversation.step, 'confirmation');
 });

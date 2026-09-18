@@ -61,9 +61,9 @@ const weekdays = {
   sabado: 6
 };
 
-const TUTOR_SCHEDULE = 'lunes a viernes, de 8:00 a. m. a 12:00 m. y de 1:00 p. m. a 5:00 p. m.';
+const WORK_SCHEDULE = 'lunes a viernes, de 8:00 a. m. a 12:00 m. y de 1:00 p. m. a 5:00 p. m.';
 
-function isWithinTutorSchedule(weekday, hour) {
+function conflictsWithWorkSchedule(weekday, hour) {
   return weekday >= 1 && weekday <= 5 && ((hour >= 8 && hour < 12) || (hour >= 13 && hour < 17));
 }
 
@@ -115,8 +115,9 @@ function parseAvailability(text, settings) {
   const scheduledAt = `${year}-${String(months[month] + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-05:00`;
   const now = settings.now ? new Date(settings.now) : new Date();
   if (new Date(scheduledAt) <= now) return { error: 'past' };
-  if (weekdays[weekday] === 0 || weekdays[weekday] === 6) return { error: 'weekend' };
-  if (!isWithinTutorSchedule(weekdays[weekday], hour)) return { error: 'businessHours' };
+  if (weekdays[weekday] === 0) return { error: 'sunday' };
+  if (hour < (settings.startHour ?? 7) || hour >= (settings.endHour ?? 21)) return { error: 'businessHours' };
+  if (conflictsWithWorkSchedule(weekdays[weekday], hour)) return { error: 'workSchedule' };
 
   return {
     availability: `${formattedWeekday} ${day} de ${formattedMonth} de ${year}, ${formatHour(hour, minute, period)}`,
@@ -130,9 +131,11 @@ function availabilityErrorReply(error, settings) {
     case 'past':
       return 'Ese horario ya pasó. Elige una fecha y hora posteriores a este momento.';
     case 'businessHours':
-      return `Nuestro horario es ${TUTOR_SCHEDULE} Elige una hora dentro de esas franjas.`;
-    case 'weekend':
-      return `Atendemos ${TUTOR_SCHEDULE} Elige un día entre lunes y viernes.`;
+      return `Solo podemos agendar entre ${settings.startHour ?? 7}:00 y ${settings.endHour ?? 21}:00. Elige una hora dentro de ese rango.`;
+    case 'workSchedule':
+      return `No podemos agendar en horario laboral: ${WORK_SCHEDULE} Elige otra hora.`;
+    case 'sunday':
+      return 'No agendamos tutorías los domingos. Elige otro día, por favor.';
     case 'date':
       return 'El día de la semana no coincide con la fecha, o esa fecha no existe. Revísala e intenta de nuevo.';
     case 'period':
@@ -215,7 +218,7 @@ export function advance(current, incomingText, settings, attachment = null) {
       if (!isYes(text)) return { conversation, reply: 'Por favor responde *sí* para continuar o *no* para finalizar.' };
       return {
         conversation: { step: STEPS.AVAILABILITY, data },
-        reply: `¿Qué día, fecha y hora te quedan mejor? Atendemos ${TUTOR_SCHEDULE} Solo podemos agendar horarios futuros. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 4:00 p. m.”.`
+        reply: `¿Qué día, fecha y hora te quedan mejor? No agendamos los domingos ni en horario laboral (${WORK_SCHEDULE}). Solo podemos agendar horarios futuros. Por ejemplo: “lunes 21 de septiembre de ${new Date().getFullYear()}, 6:00 p. m.”.`
       };
     case STEPS.AVAILABILITY:
       const schedule = parseAvailability(text, settings);
